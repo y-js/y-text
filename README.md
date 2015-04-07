@@ -1,5 +1,5 @@
 
-# Text Type for [Yjs](https://github.com/rwth-acis/yjs)
+# Text Type for [Yjs](https://github.com/y-js/yjs)
 
 Manage text/string objects with this shareable type. This type supports insert and delete operations. Furthermore, you can bind the text to textareas, input objects, and contentEditable HTML tags.
 

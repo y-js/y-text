@@ -2,7 +2,7 @@
   "name": "y-text",
   "version": "0.5.0",
   "description": "Text Type for Yjs",
-  "main": "y-text.js",
+  "main": "./build/node/y-text.js",
   "directories": {
     "example": "examples",
     "test": "test"

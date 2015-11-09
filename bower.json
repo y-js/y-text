@@ -1,15 +1,12 @@
 {
   "name": "y-text",
-  "version": "0.5.0",
+  "version": "0.6.1",
   "homepage": "http://y-js.org",
   "authors": [
     "Kevin Jahns <kevin.jahns@rwth-aachen.de>"
   ],
   "description": "Text type for Yjs",
-  "main": [
-    "./y-text.js",
-    "./build/node/y-text.js"
-  ],
+  "main": "./src/Text.js",
   "keywords": [
     "OT",
     "collaboration",
@@ -27,6 +24,5 @@
     "test"
   ],
   "devDependencies": {
-    "y-test" : "y-test#~0.5.0"
   }
 }

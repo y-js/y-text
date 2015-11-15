@@ -1,6 +1,6 @@
 {
   "name": "y-text",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Text Type for Yjs",
   "main": "./src/Text.js",
   "scripts": {
@@ -42,7 +42,7 @@
   },
   "homepage": "http://y-js.org",
   "devDependencies": {
-    "babel-eslint": "^4.1.4",
+    "babel-preset-es2015": "^6.1.18",
     "gulp": "^3.9.0",
     "gulp-load-plugins": "^1.1.0",
     "gulp-prompt": "^0.1.2",

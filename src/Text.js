@@ -266,19 +266,9 @@ function extend (Y) {
       }
     }
     Y.extend('Text', new Y.utils.CustomType({
+      name: 'Text',
       class: YText,
-      createType: function * YTextCreator () {
-        var modelid = this.store.getNextOpId()
-        var model = {
-          start: null,
-          end: null,
-          struct: 'List',
-          type: 'Text',
-          id: modelid
-        }
-        yield* this.applyCreatedOperations([model])
-        return modelid
-      },
+      struct: 'List',
       initType: function * YTextInitializer (os, model) {
         var valArray = []
         var idArray = yield* Y.Struct.List.map.call(this, model, function (c) {

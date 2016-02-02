@@ -7,6 +7,7 @@ function extend (Y) {
       constructor (os, _model, idArray, valArray) {
         super(os, _model, idArray, valArray)
         this.textfields = []
+        this.aceInstances = []
       }
       toString () {
         return this.valArray.join('')
@@ -14,10 +15,123 @@ function extend (Y) {
       insert (pos, content) {
         super.insert(pos, content.split(''))
       }
-      bind (textfield, domRoot) {
+      bindAce (ace, options) {
+        this.aceInstances.push(ace)
+        var self = this
+
+        // this function makes sure that either the
+        // quill event is executed, or the yjs observer is executed
+        var token = true
+        function mutualExcluse (f) {
+          if (token) {
+            token = false
+            try {
+              f()
+            } catch (e) {
+              token = true
+              throw new Error(e)
+            }
+            token = true
+          }
+        }
+        ace.markers = []
+        var disableMarkers = false
+
+        if (typeof options === 'object') {
+          if (typeof options.disableMarkers !== 'undefined') {
+            disableMarkers = options.disableMarkers
+          }
+        }
+
+        ace.setValue(this.valArray.join(''))
+
+        ace.on('change', function (delta) {
+          mutualExcluse(function () {
+            var start = 0
+            var length = 0
+
+            var aceDocument = ace.getSession().getDocument()
+            if (delta.action === 'insert') {
+              start = aceDocument.positionToIndex(delta.start, 0)
+              self.insert(start, delta.lines.join('\n'))
+            } else if (delta.action === 'remove') {
+              start = aceDocument.positionToIndex(delta.start, 0)
+              length = delta.lines.join('\n').length
+              self.delete(start, length)
+            }
+          })
+        })
+        if (!disableMarkers) {
+          if (this.inteval) {
+            clearInterval(this.inteval)
+          }
+          this.inteval = setInterval(function () {
+            var i = 0
+            var now = Date.now()
+            var timeVisible = 800
+
+            while (i < ace.markers.length) {
+              var marker = ace.markers[i]
+
+              if (marker.timestamp + timeVisible < now) {
+                ace.getSession().removeMarker(marker.id)
+                ace.markers.splice(i, 1)
+                i--
+              }
+              i++
+            }
+          }, 1000)
+        }
+
+        function setMarker (start, end, klazz) {
+          if (disableMarkers) {
+            return
+          }
+          var offset = 0
+          if (start.row === end.row && start.column === end.column) {
+            offset = 1
+          }
+          var range = new ace.Range(start.row, start.column, end.row, end.column + offset)
+          var marker = ace.session.addMarker(range, klazz, 'text')
+          ace.markers.push({id: marker, timestamp: Date.now()})
+        }
+
+        this.observe(function (events) {
+          var aceDocument = ace.getSession().getDocument()
+          var start = 0
+          var end = 0
+          mutualExcluse(function () {
+            for (var i = 0; i < events.length; i++) {
+              var event = events[i]
+              if (event.type === 'insert') {
+                start = aceDocument.indexToPosition(event.index, 0)
+                end = aceDocument.indexToPosition(event.index + event.value.length, 0)
+                aceDocument.insert(start, event.value)
+
+                setMarker(start, end, 'inserted')
+              } else if (event.type === 'delete') {
+                start = aceDocument.indexToPosition(event.index, 0)
+                end = aceDocument.indexToPosition(event.index + event.length, 0)
+                var range = new ace.Range(start.row, start.column, end.row, end.column)
+                aceDocument.remove(range)
+
+                setMarker(start, end, 'deleted')
+              }
+            }
+          })
+        })
+      }
+      bind () {
+        if (typeof arguments[0] === 'object') {
+          this.bindAce.apply(this, arguments)
+        } else {
+          this.bindTextarea.apply(this, arguments)
+        }
+      }
+      bindTextarea (textfield, domRoot) {
         domRoot = domRoot || window; // eslint-disable-line
         if (domRoot.getSelection == null) {
-          domRoot = window;// eslint-disable-line
+          domRoot = window; // eslint-disable-line
         }
 
         // don't duplicate!
@@ -93,7 +207,7 @@ function extend (Y) {
             }
           }
           writeContent = function (content) {
-            var contentArray = content.replace(new RegExp('\n', 'g'), ' ').split(' ');// eslint-disable-line
+            var contentArray = content.replace(new RegExp('\n', 'g'), ' ').split(' '); // eslint-disable-line
             textfield.innerText = ''
             for (var i in contentArray) {
               var c = contentArray[i]
@@ -113,7 +227,7 @@ function extend (Y) {
               var oPos, fix
               if (event.type === 'insert') {
                 oPos = event.index
-                fix = function (cursor) {// eslint-disable-line
+                fix = function (cursor) { // eslint-disable-line
                   if (cursor <= oPos) {
                     return cursor
                   } else {
@@ -125,7 +239,7 @@ function extend (Y) {
                 writeRange(r)
               } else if (event.type === 'delete') {
                 oPos = event.index
-                fix = function (cursor) {// eslint-disable-line
+                fix = function (cursor) { // eslint-disable-line
                   if (cursor < oPos) {
                     return cursor
                   } else {

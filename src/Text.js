@@ -4,13 +4,15 @@
 function extend (Y) {
   Y.requestModules(['Array']).then(function () {
     class YText extends Y.Array['class'] {
-      constructor (os, _model, idArray, valArray) {
-        super(os, _model, idArray, valArray)
+      constructor (os, _model, _content) {
+        super(os, _model, _content)
         this.textfields = []
         this.aceInstances = []
       }
       toString () {
-        return this.valArray.join('')
+        return this._content.map(function (c) {
+          return c.val
+        }).join('')
       }
       insert (pos, content) {
         super.insert(pos, content.split(''))
@@ -20,7 +22,7 @@ function extend (Y) {
         var self = this
 
         // this function makes sure that either the
-        // quill event is executed, or the yjs observer is executed
+        // ace event is executed, or the yjs observer is executed
         var token = true
         function mutualExcluse (f) {
           if (token) {
@@ -43,7 +45,7 @@ function extend (Y) {
           }
         }
 
-        ace.setValue(this.valArray.join(''))
+        ace.setValue(this.toString())
 
         ace.on('change', function (delta) {
           mutualExcluse(function () {
@@ -82,7 +84,7 @@ function extend (Y) {
             }
           }, 1000)
         }
-
+        var Range = window.ace.require('ace/range').Range
         function setMarker (start, end, klazz) {
           if (disableMarkers) {
             return
@@ -91,28 +93,26 @@ function extend (Y) {
           if (start.row === end.row && start.column === end.column) {
             offset = 1
           }
-          var range = new ace.Range(start.row, start.column, end.row, end.column + offset)
+          var range = new Range(start.row, start.column, end.row, end.column + offset)
           var marker = ace.session.addMarker(range, klazz, 'text')
           ace.markers.push({id: marker, timestamp: Date.now()})
         }
 
         this.observe(function (events) {
           var aceDocument = ace.getSession().getDocument()
-          var start = 0
-          var end = 0
           mutualExcluse(function () {
             for (var i = 0; i < events.length; i++) {
               var event = events[i]
               if (event.type === 'insert') {
-                start = aceDocument.indexToPosition(event.index, 0)
-                end = aceDocument.indexToPosition(event.index + event.value.length, 0)
+                let start = aceDocument.indexToPosition(event.index, 0)
+                let end = aceDocument.indexToPosition(event.index + event.value.length, 0)
                 aceDocument.insert(start, event.value)
 
                 setMarker(start, end, 'inserted')
               } else if (event.type === 'delete') {
-                start = aceDocument.indexToPosition(event.index, 0)
-                end = aceDocument.indexToPosition(event.index + event.length, 0)
-                var range = new ace.Range(start.row, start.column, end.row, end.column)
+                let start = aceDocument.indexToPosition(event.index, 0)
+                let end = aceDocument.indexToPosition(event.index + event.length, 0)
+                var range = new Range(start.row, start.column, end.row, end.column)
                 aceDocument.remove(range)
 
                 setMarker(start, end, 'deleted')
@@ -384,12 +384,13 @@ function extend (Y) {
       class: YText,
       struct: 'List',
       initType: function * YTextInitializer (os, model) {
-        var valArray = []
-        var idArray = yield* Y.Struct.List.map.call(this, model, function (c) {
-          valArray.push(c.content)
-          return JSON.stringify(c.id)
+        var _content = yield* Y.Struct.List.map.call(this, model, function (c) {
+          return {
+            id: JSON.stringify(c.id),
+            val: c.content
+          }
         })
-        return new YText(os, model.id, idArray, valArray)
+        return new YText(os, model.id, _content)
       }
     }))
   })

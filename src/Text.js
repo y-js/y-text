@@ -1,4 +1,4 @@
-/* global Y */
+/* global Y, Element */
 'use strict'
 
 function extend (Y) {
@@ -122,10 +122,13 @@ function extend (Y) {
         })
       }
       bind () {
-        if (typeof arguments[0] === 'object') {
+        var e = arguments[0]
+        if (e instanceof Element) {
+          this.bindTextarea.apply(this, arguments)
+        } else if (e != null && e.session != null && e.getSession != null && e.setValue != null) {
           this.bindAce.apply(this, arguments)
         } else {
-          this.bindTextarea.apply(this, arguments)
+          console.error('Cannot bind, unsupported editor!')
         }
       }
       bindTextarea (textfield, domRoot) {

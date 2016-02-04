@@ -23,6 +23,12 @@ npm install y-list --save
   * Insert a string at a position
 * .delete(position, length)
   * Delete a substring. The *length* parameter is optional and defaults to 1
+* .bindAce(aceEditor)
+  * Bind a [Ace Editor](https://ace.c9.io/)
+* .bindTextarea(editor)
+  * Supports textareas, inputs, and any contenteditable element
+* .bind(editor)
+  * Applies a binding, if the editor is supported
 * .toString()
   * Convert the internal structure to a javascript string
 * .get(i)

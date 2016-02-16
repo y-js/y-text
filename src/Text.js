@@ -9,6 +9,12 @@ function extend (Y) {
         this.textfields = []
         this.aceInstances = []
       }
+      _destroy () {
+        this.unbindAll()
+        this.textfields = null
+        this.aceInstances = null
+        super._destroy()
+      }
       toString () {
         return this._content.map(function (c) {
           return c.val
@@ -17,8 +23,26 @@ function extend (Y) {
       insert (pos, content) {
         super.insert(pos, content.split(''))
       }
+      unbindAll () {
+        for (let i = this.textfields.length - 1; i >= 0; i--) {
+          this.unbindTextarea(this.textfields[i].editor)
+        }
+        for (let i = this.aceInstances.length - 1; i >= 0; i--) {
+          this.unbindAce(this.aceInstances[i].editor)
+        }
+      }
+      unbindAce (ace) {
+        var i = this.aceInstances.findIndex(function (binding) {
+          return binding.editor === ace
+        })
+        if (i >= 0) {
+          var binding = this.aceInstances[i]
+          this.unobserve(binding.yCallback)
+          binding.editor.off('change', binding.aceCallback)
+          this.aceInstances.splice(i, 1)
+        }
+      }
       bindAce (ace, options) {
-        this.aceInstances.push(ace)
         var self = this
 
         // this function makes sure that either the
@@ -47,7 +71,7 @@ function extend (Y) {
 
         ace.setValue(this.toString())
 
-        ace.on('change', function (delta) {
+        function aceCallback (delta) {
           mutualExcluse(function () {
             var start = 0
             var length = 0
@@ -62,7 +86,9 @@ function extend (Y) {
               self.delete(start, length)
             }
           })
-        })
+        }
+        ace.on('change', aceCallback)
+
         if (!disableMarkers) {
           if (this.inteval) {
             clearInterval(this.inteval)
@@ -98,7 +124,7 @@ function extend (Y) {
           ace.markers.push({id: marker, timestamp: Date.now()})
         }
 
-        this.observe(function (events) {
+        function yCallback (events) {
           var aceDocument = ace.getSession().getDocument()
           mutualExcluse(function () {
             for (var i = 0; i < events.length; i++) {
@@ -119,6 +145,12 @@ function extend (Y) {
               }
             }
           })
+        }
+        this.observe(yCallback)
+        this.aceInstances.push({
+          editor: ace,
+          yCallback: yCallback,
+          aceCallback: aceCallback
         })
       }
       bind () {
@@ -131,6 +163,22 @@ function extend (Y) {
           console.error('Cannot bind, unsupported editor!')
         }
       }
+      unbindTextarea (textarea) {
+        var i = this.textfields.findIndex(function (binding) {
+          return binding.editor === textarea
+        })
+        if (i >= 0) {
+          var binding = this.textfields[i]
+          this.unobserve(binding.yCallback)
+          var e = binding.editor
+          e.onkeydown = null
+          e.onkeyup = null
+          e.onkeypress = null
+          e.onpaste = null
+          e.oncut = null
+          this.textfields.splice(i, 1)
+        }
+      }
       bindTextarea (textfield, domRoot) {
         domRoot = domRoot || window; // eslint-disable-line
         if (domRoot.getSelection == null) {
@@ -138,8 +186,8 @@ function extend (Y) {
         }
 
         // don't duplicate!
-        for (var t in this.textfields) {
-          if (this.textfields[t] === textfield) {
+        for (var t = 0; t < this.textfields.length; t++) {
+          if (this.textfields[t].editor === textfield) {
             return
           }
         }
@@ -147,7 +195,7 @@ function extend (Y) {
 
         var word = this
         textfield.value = this.toString()
-        this.textfields.push(textfield)
+
         var createRange, writeRange, writeContent
         if (textfield.selectionStart != null && textfield.setSelectionRange != null) {
           createRange = function (fix) {
@@ -212,7 +260,7 @@ function extend (Y) {
           writeContent = function (content) {
             var contentArray = content.replace(new RegExp('\n', 'g'), ' ').split(' '); // eslint-disable-line
             textfield.innerText = ''
-            for (var i in contentArray) {
+            for (var i = 0; i < contentArray.length; i++) {
               var c = contentArray[i]
               textfield.innerText += c
               if (i !== contentArray.length - 1) {
@@ -223,8 +271,8 @@ function extend (Y) {
         }
         writeContent(this.toString())
 
-        this.observe(function (events) {
-          for (var e in events) {
+        function yCallback (events) {
+          for (var e = 0; e < events.length; e++) {
             var event = events[e]
             if (!creatorToken) {
               var oPos, fix
@@ -255,7 +303,8 @@ function extend (Y) {
               }
             }
           }
-        })
+        }
+        this.observe(yCallback)
         // consume all text-insert changes.
         textfield.onkeypress = function (event) {
           if (word.is_deleted) {
@@ -380,6 +429,10 @@ function extend (Y) {
             return true
           }
         }
+        this.textfields.push({
+          editor: textfield,
+          yCallback: yCallback
+        })
       }
     }
     Y.extend('Text', new Y.utils.CustomType({

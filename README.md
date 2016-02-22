@@ -29,7 +29,7 @@ npm install y-list --save
   * Supports textareas, inputs, and any contenteditable element
 * .bind(editor)
   * Applies a binding, if the editor is supported
-  * `.bind*(editor) does not preserve the existing value of the bound editor.
+  * `.bind*(editor)` does not preserve the existing value of the bound editor.
 * .toString()
   * Convert the internal structure to a javascript string
 * .get(i)

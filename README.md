@@ -1,22 +1,27 @@
 
 # Text Type for [Yjs](https://github.com/y-js/yjs)
 
-Manage text-like data with this shareable list type.
+Use the Y.Text type to share text content, and bind it to arbitrary input elements (E.g. input, textarea, or any element that has the contenteditable property)
+
+```
+// bind text to the first p element that is contenteditable
+y.share.text.bind(document.querySelector("p[contenteditable]"))
+```
 
 ## Use it!
 Retrieve this with bower or npm.
 
 ##### Bower
 ```
-bower install y-list --save
+bower install y-text --save
 ```
 
 ##### NPM
 ```
-npm install y-list --save
+npm install y-text --save
 ```
 
-### List Object
+### Text Object
 
 ##### Reference
 * .insert(position, string)
@@ -53,6 +58,6 @@ If two users insert something at the same position concurrently, the content tha
   * Overall worst case complexety: O(|conflicts|!)
 
 ## License
-Yjs is licensed under the [MIT License](./LICENSE.txt).
+Yjs is licensed under the [MIT License](./LICENSE).
 
 <kevin.jahns@rwth-aachen.de>

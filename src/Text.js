@@ -3,7 +3,7 @@
 
 function extend (Y) {
   Y.requestModules(['Array']).then(function () {
-    class YText extends Y.Array['class'] {
+    class YText extends Y.Array.typeDefinition['class'] {
       constructor (os, _model, _content) {
         super(os, _model, _content)
         this.textfields = []

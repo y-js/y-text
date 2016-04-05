@@ -131,8 +131,8 @@ function extend (Y) {
               var event = events[i]
               if (event.type === 'insert') {
                 let start = aceDocument.indexToPosition(event.index, 0)
-                let end = aceDocument.indexToPosition(event.index + event.value.length, 0)
-                aceDocument.insert(start, event.value)
+                let end = aceDocument.indexToPosition(event.index + event.length, 0)
+                aceDocument.insert(start, event.values.join(''))
 
                 setMarker(start, end, 'inserted')
               } else if (event.type === 'delete') {

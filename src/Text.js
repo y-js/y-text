@@ -440,10 +440,17 @@ function extend (Y) {
       class: YText,
       struct: 'List',
       initType: function * YTextInitializer (os, model) {
-        var _content = yield* Y.Struct.List.map.call(this, model, function (c) {
-          return {
-            id: JSON.stringify(c.id),
-            val: c.content
+        var _content = []
+        yield* Y.Struct.List.map.call(this, model, function (op) {
+          if (op.hasOwnProperty('opContent')) {
+            throw new Error('Text must not contain types!')
+          } else {
+            op.content.forEach(function (c, i) {
+              _content.push({
+                id: [op.id[0], op.id[1] + i],
+                val: op.content[i]
+              })
+            })
           }
         })
         return new YText(os, model.id, _content)

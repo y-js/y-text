@@ -124,25 +124,22 @@ function extend (Y) {
           ace.markers.push({id: marker, timestamp: Date.now()})
         }
 
-        function yCallback (events) {
+        function yCallback (event) {
           var aceDocument = ace.getSession().getDocument()
           mutualExcluse(function () {
-            for (var i = 0; i < events.length; i++) {
-              var event = events[i]
-              if (event.type === 'insert') {
-                let start = aceDocument.indexToPosition(event.index, 0)
-                let end = aceDocument.indexToPosition(event.index + event.length, 0)
-                aceDocument.insert(start, event.values.join(''))
+            if (event.type === 'insert') {
+              let start = aceDocument.indexToPosition(event.index, 0)
+              let end = aceDocument.indexToPosition(event.index + event.length, 0)
+              aceDocument.insert(start, event.values.join(''))
 
-                setMarker(start, end, 'inserted')
-              } else if (event.type === 'delete') {
-                let start = aceDocument.indexToPosition(event.index, 0)
-                let end = aceDocument.indexToPosition(event.index + event.length, 0)
-                var range = new Range(start.row, start.column, end.row, end.column)
-                aceDocument.remove(range)
+              setMarker(start, end, 'inserted')
+            } else if (event.type === 'delete') {
+              let start = aceDocument.indexToPosition(event.index, 0)
+              let end = aceDocument.indexToPosition(event.index + event.length, 0)
+              var range = new Range(start.row, start.column, end.row, end.column)
+              aceDocument.remove(range)
 
-                setMarker(start, end, 'deleted')
-              }
+              setMarker(start, end, 'deleted')
             }
           })
         }
@@ -271,36 +268,33 @@ function extend (Y) {
         }
         writeContent(this.toString())
 
-        function yCallback (events) {
-          for (var e = 0; e < events.length; e++) {
-            var event = events[e]
-            if (!creatorToken) {
-              var oPos, fix
-              if (event.type === 'insert') {
-                oPos = event.index
-                fix = function (cursor) { // eslint-disable-line
-                  if (cursor <= oPos) {
-                    return cursor
-                  } else {
-                    cursor += 1
-                    return cursor
-                  }
+        function yCallback (event) {
+          if (!creatorToken) {
+            var oPos, fix
+            if (event.type === 'insert') {
+              oPos = event.index
+              fix = function (cursor) { // eslint-disable-line
+                if (cursor <= oPos) {
+                  return cursor
+                } else {
+                  cursor += 1
+                  return cursor
                 }
-                var r = createRange(fix)
-                writeRange(r)
-              } else if (event.type === 'delete') {
-                oPos = event.index
-                fix = function (cursor) { // eslint-disable-line
-                  if (cursor < oPos) {
-                    return cursor
-                  } else {
-                    cursor -= 1
-                    return cursor
-                  }
-                }
-                r = createRange(fix)
-                writeRange(r)
               }
+              var r = createRange(fix)
+              writeRange(r)
+            } else if (event.type === 'delete') {
+              oPos = event.index
+              fix = function (cursor) { // eslint-disable-line
+                if (cursor < oPos) {
+                  return cursor
+                } else {
+                  cursor -= 1
+                  return cursor
+                }
+              }
+              r = createRange(fix)
+              writeRange(r)
             }
           }
         }

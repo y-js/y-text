@@ -1,6 +1,6 @@
 {
   "name": "y-text",
-  "version": "8.0.4",
+  "version": "9.0.0",
   "homepage": "http://y-js.org",
   "authors": [
     "Kevin Jahns <kevin.jahns@rwth-aachen.de>"
@@ -19,7 +19,7 @@
   "license": "MIT",
   "ignore": [],
   "dependencies": {
-    "yjs": "^10.0.0",
-    "y-array": "^8.0.0"
+    "yjs": "^11.0.0",
+    "y-array": "^9.0.0"
   }
 }

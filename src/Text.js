@@ -429,7 +429,7 @@ function extend (Y) {
         })
       }
     }
-    Y.extend('Text', new Y.utils.CustomType({
+    Y.extend('Text', new Y.utils.CustomTypeDefinition({
       name: 'Text',
       class: YText,
       struct: 'List',
@@ -448,6 +448,9 @@ function extend (Y) {
           }
         })
         return new YText(os, model.id, _content)
+      },
+      createType: function YTextCreator (os, model) {
+        return new YText(os, model.id, [])
       }
     }))
   })

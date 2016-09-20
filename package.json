@@ -1,6 +1,6 @@
 {
   "name": "y-text",
-  "version": "9.0.1",
+  "version": "9.0.2",
   "description": "Text Type for Yjs",
   "main": "./src/Text.js",
   "scripts": {
@@ -52,7 +52,7 @@
     "standard": "^5.3.1"
   },
   "peerDependencies": {
-    "yjs": "^11.0.0",
-    "y-array": "^9.0.0"
+    "yjs": "^12.0.0",
+    "y-array": "^10.0.0"
   }
 }

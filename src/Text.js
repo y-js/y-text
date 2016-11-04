@@ -1,6 +1,8 @@
 /* global Y, Element */
 'use strict'
 
+var diff = require('fast-diff')
+
 function extend (Y) {
   Y.requestModules(['Array']).then(function () {
     class YText extends Y.Array.typeDefinition['class'] {
@@ -168,11 +170,7 @@ function extend (Y) {
           var binding = this.textfields[i]
           this.unobserve(binding.yCallback)
           var e = binding.editor
-          e.onkeydown = null
-          e.onkeyup = null
-          e.onkeypress = null
-          e.onpaste = null
-          e.oncut = null
+          e.oninput = null
           this.textfields.splice(i, 1)
         }
       }
@@ -188,12 +186,26 @@ function extend (Y) {
             return
           }
         }
-        var creatorToken = false
+        // this function makes sure that either the
+        // textfieldt event is executed, or the yjs observer is executed
+        var token = true
+        function mutualExcluse (f) {
+          if (token) {
+            token = false
+            try {
+              f()
+            } catch (e) {
+              token = true
+              throw new Error(e)
+            }
+            token = true
+          }
+        }
 
-        var word = this
+        var self = this
         textfield.value = this.toString()
 
-        var createRange, writeRange, writeContent
+        var createRange, writeRange, writeContent, getContent
         if (textfield.selectionStart != null && textfield.setSelectionRange != null) {
           createRange = function (fix) {
             var left = textfield.selectionStart
@@ -208,11 +220,14 @@ function extend (Y) {
             }
           }
           writeRange = function (range) {
-            writeContent(word.toString())
+            writeContent(self.toString())
             textfield.setSelectionRange(range.left, range.right)
           }
           writeContent = function (content) {
             textfield.value = content
+          }
+          getContent = function () {
+            return textfield.value
           }
         } else {
           createRange = function (fix) {
@@ -235,7 +250,7 @@ function extend (Y) {
           }
 
           writeRange = function (range) {
-            writeContent(word.toString())
+            writeContent(self.toString())
             var textnode = textfield.childNodes[0]
             if (range.isReal && textnode != null) {
               if (range.left < 0) {
@@ -249,12 +264,14 @@ function extend (Y) {
               var r = document.createRange(); // eslint-disable-line
               r.setStart(textnode, range.left)
               r.setEnd(textnode, range.right)
-              var s = window.getSelection(); // eslint-disable-line
+              var s = domRoot.getSelection(); // eslint-disable-line
               s.removeAllRanges()
               s.addRange(r)
             }
           }
           writeContent = function (content) {
+            textfield.innerText = content
+            /*
             var contentArray = content.replace(new RegExp('\n', 'g'), ' ').split(' '); // eslint-disable-line
             textfield.innerText = ''
             for (var i = 0; i < contentArray.length; i++) {
@@ -264,12 +281,16 @@ function extend (Y) {
                 textfield.innerHTML += '&nbsp;'
               }
             }
+            */
+          }
+          getContent = function () {
+            return textfield.innerText
           }
         }
         writeContent(this.toString())
 
         function yCallback (event) {
-          if (!creatorToken) {
+          mutualExcluse(() => {
             var oPos, fix
             if (event.type === 'insert') {
               oPos = event.index
@@ -296,137 +317,39 @@ function extend (Y) {
               r = createRange(fix)
               writeRange(r)
             }
-          }
+          })
         }
         this.observe(yCallback)
-        // consume all text-insert changes.
-        textfield.onkeypress = function (event) {
-          if (word.is_deleted) {
-            // if word is deleted, do not do anything ever again
-            textfield.onkeypress = null
-            return true
-          }
-          creatorToken = true
-          var char
-          if (event.keyCode === 13) {
-            char = '\n'
-          } else if (event.key != null) {
-            if (event.charCode === 32) {
-              char = ' '
-            } else {
-              char = event.key
-            }
-          } else {
-            char = window.String.fromCharCode(event.keyCode); // eslint-disable-line
-          }
-          if (char.length > 1) {
-            return true
-          } else if (char.length > 0) {
-            var r = createRange()
-            var pos = Math.min(r.left, r.right, word.length)
-            var diff = Math.abs(r.right - r.left)
-            word.delete(pos, diff)
-            word.insert(pos, char)
-            r.left = pos + char.length
-            r.right = r.left
-            writeRange(r)
-          }
-          event.preventDefault()
-          creatorToken = false
-          return false
-        }
-        textfield.onpaste = function (event) {
-          if (word.is_deleted) {
-            // if word is deleted, do not do anything ever again
-            textfield.onpaste = null
-            return true
-          }
-          event.preventDefault()
-        }
-        textfield.oncut = function (event) {
-          if (word.is_deleted) {
-            // if word is deleted, do not do anything ever again
-            textfield.oncut = null
-            return true
-          }
-          event.preventDefault()
-        }
-        //
-        // consume deletes. Note that
-        //   chrome: won't consume deletions on keypress event.
-        //   keyCode is deprecated. BUT: I don't see another way.
-        //     since event.key is not implemented in the current version of chrome.
-        //     Every browser supports keyCode. Let's stick with it for now..
-        //
-        textfield.onkeydown = function (event) {
-          creatorToken = true
-          if (word.is_deleted) {
-            // if word is deleted, do not do anything ever again
-            textfield.onkeydown = null
-            return true
-          }
-          var r = createRange()
-          var pos = Math.min(r.left, r.right, word.toString().length)
-          var diff = Math.abs(r.left - r.right)
-          if (event.keyCode != null && event.keyCode === 8) { // Backspace
-            if (diff > 0) {
-              word.delete(pos, diff)
-              r.left = pos
-              r.right = pos
-              writeRange(r)
-            } else {
-              if (event.ctrlKey != null && event.ctrlKey) {
-                var val = word.toString()
-                var newPos = pos
-                var delLength = 0
-                if (pos > 0) {
-                  newPos--
-                  delLength++
-                }
-                while (newPos > 0 && val[newPos] !== ' ' && val[newPos] !== '\n') {
-                  newPos--
-                  delLength++
-                }
-                word.delete(newPos, pos - newPos)
-                r.left = newPos
-                r.right = newPos
-                writeRange(r)
-              } else {
-                if (pos > 0) {
-                  word.delete(pos - 1, 1)
-                  r.left = pos - 1
-                  r.right = pos - 1
-                  writeRange(r)
-                }
+
+        var textfieldObserver = function textfieldObserver () {
+          mutualExcluse(function () {
+            var r = createRange(function (x) { return x })
+            var oldContent = self.toString()
+            var content = getContent()
+            var diffs = diff(oldContent, content, r.left)
+            var pos = 0
+            for (var i = 0; i < diffs.length; i++) {
+              var d = diffs[i]
+              if (d[0] === 0) { // EQUAL
+                pos += d[1].length
+              } else if (d[0] === -1) { // DELETE
+                self.delete(pos, d[1].length)
+              } else { // INSERT
+                self.insert(pos, d[1])
+                pos += d[1].length
               }
             }
-            event.preventDefault()
-            creatorToken = false
-            return false
-          } else if (event.keyCode != null && event.keyCode === 46) { // Delete
-            if (diff > 0) {
-              word.delete(pos, diff)
-              r.left = pos
-              r.right = pos
-              writeRange(r)
-            } else {
-              word.delete(pos, 1)
-              r.left = pos
-              r.right = pos
-              writeRange(r)
-            }
-            event.preventDefault()
-            creatorToken = false
-            return false
-          } else {
-            creatorToken = false
-            return true
-          }
+          })
         }
+        textfield.oninput = textfieldObserver
         this.textfields.push({
           editor: textfield,
           yCallback: yCallback
         })
+      }
+      _destroy () {
+        this.unbindQuillAll()
+        super._destroy()
       }
     }
     Y.extend('Text', new Y.utils.CustomTypeDefinition({

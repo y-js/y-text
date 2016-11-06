@@ -18,7 +18,15 @@ bower install y-text --save
 
 ##### NPM
 ```
-npm install y-text --save
+npm install y-text y-array --save
+```
+
+This type depends on [y-array](https://github.com/y-js/y-array). So you have to extend Yjs in the right order:
+
+```javascript
+var Y = require('yjs')
+require('y-array')(Y)
+require('y-text')(Y)
 ```
 
 ### Text Object

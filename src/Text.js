@@ -11,12 +11,6 @@ function extend (Y) {
         this.textfields = []
         this.aceInstances = []
       }
-      _destroy () {
-        this.unbindAll()
-        this.textfields = null
-        this.aceInstances = null
-        super._destroy()
-      }
       toString () {
         return this._content.map(function (c) {
           return c.val
@@ -170,7 +164,7 @@ function extend (Y) {
           var binding = this.textfields[i]
           this.unobserve(binding.yCallback)
           var e = binding.editor
-          e.oninput = null
+          e.removeEventListener('input', binding.eventListener)
           this.textfields.splice(i, 1)
         }
       }
@@ -341,14 +335,17 @@ function extend (Y) {
             }
           })
         }
-        textfield.oninput = textfieldObserver
+        textfield.addEventListener('input', textfieldObserver)
         this.textfields.push({
           editor: textfield,
-          yCallback: yCallback
+          yCallback: yCallback,
+          eventListener: textfieldObserver
         })
       }
       _destroy () {
-        this.unbindQuillAll()
+        this.unbindAll()
+        this.textfields = null
+        this.aceInstances = null
         super._destroy()
       }
     }

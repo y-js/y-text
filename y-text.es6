@@ -1,4 +1,10 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/**
+ * yjs - A framework for real-time p2p shared editing on any data
+ * @version v12.1.3
+ * @link http://y-js.org
+ * @license MIT
+ */
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.yText = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /**
  * This library modifies the diff-patch-match library by Neil Fraser
  * by removing the patch and match functionality and certain advanced
@@ -721,12 +727,8 @@ function extend (Y) {
         super.insert(pos, content.split(''))
       }
       unbindAll () {
-        for (let i = this.textfields.length - 1; i >= 0; i--) {
-          this.unbindTextarea(this.textfields[i].editor)
-        }
-        for (let i = this.aceInstances.length - 1; i >= 0; i--) {
-          this.unbindAce(this.aceInstances[i].editor)
-        }
+        this.unbindTextareaAll()
+        this.unbindAceAll()
       }
       unbindAce (ace) {
         var i = this.aceInstances.findIndex(function (binding) {
@@ -737,6 +739,11 @@ function extend (Y) {
           this.unobserve(binding.yCallback)
           binding.editor.off('change', binding.aceCallback)
           this.aceInstances.splice(i, 1)
+        }
+      }
+      unbindAceAll (ace) {
+        for (let i = this.aceInstances.length - 1; i >= 0; i--) {
+          this.unbindAce(this.aceInstances[i].editor)
         }
       }
       bindAce (ace, options) {
@@ -757,21 +764,12 @@ function extend (Y) {
             token = true
           }
         }
-        ace.markers = []
-        var disableMarkers = false
-
-        if (typeof options === 'object') {
-          if (typeof options.disableMarkers !== 'undefined') {
-            disableMarkers = options.disableMarkers
-          }
-        }
-
         ace.setValue(this.toString())
 
         function aceCallback (delta) {
           mutualExcluse(function () {
-            var start = 0
-            var length = 0
+            var start
+            var length
 
             var aceDocument = ace.getSession().getDocument()
             if (delta.action === 'insert') {
@@ -786,57 +784,20 @@ function extend (Y) {
         }
         ace.on('change', aceCallback)
 
-        if (!disableMarkers) {
-          if (this.inteval) {
-            clearInterval(this.inteval)
-          }
-          this.inteval = setInterval(function () {
-            var i = 0
-            var now = Date.now()
-            var timeVisible = 800
-
-            while (i < ace.markers.length) {
-              var marker = ace.markers[i]
-
-              if (marker.timestamp + timeVisible < now) {
-                ace.getSession().removeMarker(marker.id)
-                ace.markers.splice(i, 1)
-                i--
-              }
-              i++
-            }
-          }, 1000)
-        }
+        ace.selection.clearSelection()
         var Range = window.ace.require('ace/range').Range
-        function setMarker (start, end, klazz) {
-          if (disableMarkers) {
-            return
-          }
-          var offset = 0
-          if (start.row === end.row && start.column === end.column) {
-            offset = 1
-          }
-          var range = new Range(start.row, start.column, end.row, end.column + offset)
-          var marker = ace.session.addMarker(range, klazz, 'text')
-          ace.markers.push({id: marker, timestamp: Date.now()})
-        }
 
         function yCallback (event) {
           var aceDocument = ace.getSession().getDocument()
           mutualExcluse(function () {
             if (event.type === 'insert') {
               let start = aceDocument.indexToPosition(event.index, 0)
-              let end = aceDocument.indexToPosition(event.index + event.length, 0)
               aceDocument.insert(start, event.values.join(''))
-
-              setMarker(start, end, 'inserted')
             } else if (event.type === 'delete') {
               let start = aceDocument.indexToPosition(event.index, 0)
               let end = aceDocument.indexToPosition(event.index + event.length, 0)
               var range = new Range(start.row, start.column, end.row, end.column)
               aceDocument.remove(range)
-
-              setMarker(start, end, 'deleted')
             }
           })
         }
@@ -867,6 +828,11 @@ function extend (Y) {
           var e = binding.editor
           e.removeEventListener('input', binding.eventListener)
           this.textfields.splice(i, 1)
+        }
+      }
+      unbindTextareaAll () {
+        for (let i = this.textfields.length - 1; i >= 0; i--) {
+          this.unbindTextarea(this.textfields[i].editor)
         }
       }
       bindTextarea (textfield, domRoot) {
@@ -1082,5 +1048,6 @@ if (typeof Y !== 'undefined') {
   extend(Y)
 }
 
-},{"fast-diff":1}]},{},[2])
+},{"fast-diff":1}]},{},[2])(2)
+});
 

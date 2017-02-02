@@ -78,7 +78,6 @@ function extend (Y) {
         ace.on('change', aceCallback)
 
         ace.selection.clearSelection()
-        var Range = window.ace.require('ace/range').Range
 
         function yCallback (event) {
           var aceDocument = ace.getSession().getDocument()
@@ -89,7 +88,7 @@ function extend (Y) {
             } else if (event.type === 'delete') {
               let start = aceDocument.indexToPosition(event.index, 0)
               let end = aceDocument.indexToPosition(event.index + event.length, 0)
-              var range = new Range(start.row, start.column, end.row, end.column)
+              var range = { start, end }
               aceDocument.remove(range)
             }
           })

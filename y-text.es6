@@ -1,6 +1,6 @@
 /**
  * yjs - A framework for real-time p2p shared editing on any data
- * @version v12.1.3
+ * @version v12.1.4
  * @link http://y-js.org
  * @license MIT
  */
@@ -785,7 +785,7 @@ function extend (Y) {
         ace.on('change', aceCallback)
 
         ace.selection.clearSelection()
-        var Range = window.ace.require('ace/range').Range
+        var Range = ace.require('ace/range').Range
 
         function yCallback (event) {
           var aceDocument = ace.getSession().getDocument()

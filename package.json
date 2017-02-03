@@ -1,6 +1,6 @@
 {
   "name": "y-text",
-  "version": "9.2.0",
+  "version": "9.2.1",
   "description": "Text Type for Yjs",
   "main": "./src/Text.js",
   "scripts": {

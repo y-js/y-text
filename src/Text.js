@@ -78,7 +78,7 @@ function extend (Y) {
         ace.on('change', aceCallback)
 
         ace.selection.clearSelection()
-        var Range = window.ace.require('ace/range').Range
+        var Range = ace.require('ace/range').Range
 
         function yCallback (event) {
           var aceDocument = ace.getSession().getDocument()

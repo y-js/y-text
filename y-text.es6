@@ -730,9 +730,9 @@ function extend (Y) {
         this.unbindTextareaAll()
         this.unbindAceAll()
       }
-      unbindAce (ace) {
+      unbindAce (aceInstance) {
         var i = this.aceInstances.findIndex(function (binding) {
-          return binding.editor === ace
+          return binding.editor === aceInstance
         })
         if (i >= 0) {
           var binding = this.aceInstances[i]
@@ -741,13 +741,14 @@ function extend (Y) {
           this.aceInstances.splice(i, 1)
         }
       }
-      unbindAceAll (ace) {
+      unbindAceAll (aceInstance) {
         for (let i = this.aceInstances.length - 1; i >= 0; i--) {
           this.unbindAce(this.aceInstances[i].editor)
         }
       }
-      bindAce (ace, options) {
+      bindAce (aceInstance, options) {
         var self = this
+        options = options || {}
 
         // this function makes sure that either the
         // ace event is executed, or the yjs observer is executed
@@ -764,14 +765,14 @@ function extend (Y) {
             token = true
           }
         }
-        ace.setValue(this.toString())
+        aceInstance.setValue(this.toString())
 
         function aceCallback (delta) {
           mutualExcluse(function () {
             var start
             var length
 
-            var aceDocument = ace.getSession().getDocument()
+            var aceDocument = aceInstance.getSession().getDocument()
             if (delta.action === 'insert') {
               start = aceDocument.positionToIndex(delta.start, 0)
               self.insert(start, delta.lines.join('\n'))
@@ -782,13 +783,23 @@ function extend (Y) {
             }
           })
         }
-        ace.on('change', aceCallback)
+        aceInstance.on('change', aceCallback)
 
-        ace.selection.clearSelection()
-        var Range = ace.require('ace/range').Range
+        aceInstance.selection.clearSelection()
+
+        // We don't that ace is a global variable
+        // see #2
+        var aceClass
+        if (typeof ace !== 'undefined' && options.aceClass == null) {
+          aceClass = ace // eslint-disable-line
+        } else {
+          aceClass = options.aceClass
+        }
+        var aceRequire = options.aceRequire || aceClass.require
+        var Range = aceRequire('ace/range').Range
 
         function yCallback (event) {
-          var aceDocument = ace.getSession().getDocument()
+          var aceDocument = aceInstance.getSession().getDocument()
           mutualExcluse(function () {
             if (event.type === 'insert') {
               let start = aceDocument.indexToPosition(event.index, 0)
@@ -803,7 +814,7 @@ function extend (Y) {
         }
         this.observe(yCallback)
         this.aceInstances.push({
-          editor: ace,
+          editor: aceInstance,
           yCallback: yCallback,
           aceCallback: aceCallback
         })

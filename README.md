@@ -40,13 +40,16 @@ require('y-text')(Y)
   * Bind a [Ace Editor](https://ace.c9.io/)
 * .bindTextarea(editor)
   * Supports textareas, inputs, and any contenteditable element
-* .bind(editor)
+* .bind(editor, options)
   * Applies a binding, if the editor is supported
   * `.bind*(editor)` does not preserve the existing value of the bound editor.
+  * `options` supports the following properties:
+    * **aceClass**: In case `ace` is not defined on the global object
+    * **aceRequire**: An alternative method to require Ace modules (default is `aceClass.require`). Must work similar to `ace.require`
 * .toString()
   * Convert the internal structure to a javascript string
 * .get(i)
-  * Retrieve the i-th character 
+  * Retrieve the i-th character
 * .observe(f)
   * The observer is called whenever something on this text changed. (throws insert, and delete events)
 * .unobserve(f)

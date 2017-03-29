@@ -1,6 +1,6 @@
 /**
  * yjs - A framework for real-time p2p shared editing on any data
- * @version v12.1.4
+ * @version v12.1.6
  * @link http://y-js.org
  * @license MIT
  */
@@ -717,6 +717,7 @@ function extend (Y) {
         super(os, _model, _content)
         this.textfields = []
         this.aceInstances = []
+        this.codeMirrorInstances = []
       }
       toString () {
         return this._content.map(function (c) {
@@ -729,6 +730,82 @@ function extend (Y) {
       unbindAll () {
         this.unbindTextareaAll()
         this.unbindAceAll()
+        this.unbindCodeMirrorAll()
+      }
+      unbindCodeMirror (codeMirrorInstance) {
+        var i = this.codeMirrorInstances.findIndex(function (binding) {
+          return binding.editor === codeMirrorInstance
+        })
+        if (i >= 0) {
+          var binding = this.codeMirrorInstances[i]
+          this.unobserve(binding.yCallback)
+          binding.editor.off('change', binding.aceCallback)
+          this.codeMirrorInstances.splice(i, 1)
+        }
+      }
+      unbindCodeMirrorAll () {
+        for (let i = this.codeMirrorInstances.length - 1; i >= 0; i--) {
+          this.unbindCodeMirror(this.codeMirrorInstances[i].editor)
+        }
+      }
+      bindCodeMirror (codeMirrorInstance, options) {
+        var self = this
+        options = options || {}
+
+        // this function makes sure that either the
+        // ace event is executed, or the yjs observer is executed
+        var token = true
+        function mutualExcluse (f) {
+          if (token) {
+            token = false
+            try {
+              f()
+            } catch (e) {
+              token = true
+              throw new Error(e)
+            }
+            token = true
+          }
+        }
+        codeMirrorInstance.setValue(this.toString())
+
+        function codeMirrorCallback (cm, delta) {
+          mutualExcluse(function () {
+            var start = codeMirrorInstance.indexFromPos(delta.from)
+            // apply the delete operation first
+            if (delta.removed.length > 0) {
+              var delLength = 0
+              for (var i = 0; i < delta.removed.length; i++) {
+                delLength += delta.removed[i].length
+              }
+              // "enter" is also a character in our case
+              delLength += delta.removed.length - 1
+              self.delete(start, delLength)
+            }
+            // apply insert operation
+            self.insert(start, delta.text.join('\n'))
+          })
+        }
+        codeMirrorInstance.on('change', codeMirrorCallback)
+
+        function yCallback (event) {
+          mutualExcluse(function () {
+            let from = codeMirrorInstance.posFromIndex(event.index)
+            if (event.type === 'insert') {
+              let to = from
+              codeMirrorInstance.replaceRange(event.values.join(''), from, to)
+            } else if (event.type === 'delete') {
+              let to = codeMirrorInstance.posFromIndex(event.index + event.length)
+              codeMirrorInstance.replaceRange('', from, to)
+            }
+          })
+        }
+        this.observe(yCallback)
+        this.codeMirrorInstances.push({
+          editor: codeMirrorInstance,
+          yCallback: yCallback,
+          codeMirrorCallback: codeMirrorCallback
+        })
       }
       unbindAce (aceInstance) {
         var i = this.aceInstances.findIndex(function (binding) {
@@ -741,7 +818,7 @@ function extend (Y) {
           this.aceInstances.splice(i, 1)
         }
       }
-      unbindAceAll (aceInstance) {
+      unbindAceAll () {
         for (let i = this.aceInstances.length - 1; i >= 0; i--) {
           this.unbindAce(this.aceInstances[i].editor)
         }
@@ -825,6 +902,8 @@ function extend (Y) {
           this.bindTextarea.apply(this, arguments)
         } else if (e != null && e.session != null && e.getSession != null && e.setValue != null) {
           this.bindAce.apply(this, arguments)
+        } else if (e != null && e.posFromIndex != null && e.replaceRange != null) {
+          this.bindCodeMirror.apply(this, arguments)
         } else {
           console.error('Cannot bind, unsupported editor!')
         }

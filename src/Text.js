@@ -32,7 +32,7 @@ function extend (Y) {
         if (i >= 0) {
           var binding = this.codeMirrorInstances[i]
           this.unobserve(binding.yCallback)
-          binding.editor.off('change', binding.codeMirrorCallback)
+          binding.editor.off('changes', binding.codeMirrorCallback)
           this.codeMirrorInstances.splice(i, 1)
         }
       }
@@ -62,24 +62,29 @@ function extend (Y) {
         }
         codeMirrorInstance.setValue(this.toString())
 
-        function codeMirrorCallback (cm, delta) {
+        function codeMirrorCallback (cm, deltas) {
           mutualExcluse(function () {
-            var start = codeMirrorInstance.indexFromPos(delta.from)
-            // apply the delete operation first
-            if (delta.removed.length > 0) {
-              var delLength = 0
-              for (var i = 0; i < delta.removed.length; i++) {
-                delLength += delta.removed[i].length
+            for (var i = 0; i < deltas.length; i++) {
+              var delta = deltas[i]
+              var start = codeMirrorInstance.indexFromPos(delta.from)
+              // apply the delete operation first
+              if (delta.removed.length > 0 ||
+                (delta.removed.length === 1 && delta.removed[0].length === 0)
+              ) {
+                var delLength = 0
+                for (var j = 0; j < delta.removed.length; j++) {
+                  delLength += delta.removed[j].length
+                }
+                // "enter" is also a character in our case
+                delLength += delta.removed.length - 1
+                self.delete(start, delLength)
               }
-              // "enter" is also a character in our case
-              delLength += delta.removed.length - 1
-              self.delete(start, delLength)
+              // apply insert operation
+              self.insert(start, delta.text.join('\n'))
             }
-            // apply insert operation
-            self.insert(start, delta.text.join('\n'))
           })
         }
-        codeMirrorInstance.on('change', codeMirrorCallback)
+        codeMirrorInstance.on('changes', codeMirrorCallback)
 
         function yCallback (event) {
           mutualExcluse(function () {

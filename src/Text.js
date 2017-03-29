@@ -32,7 +32,7 @@ function extend (Y) {
         if (i >= 0) {
           var binding = this.codeMirrorInstances[i]
           this.unobserve(binding.yCallback)
-          binding.editor.off('change', binding.aceCallback)
+          binding.editor.off('change', binding.codeMirrorCallback)
           this.codeMirrorInstances.splice(i, 1)
         }
       }
@@ -46,7 +46,7 @@ function extend (Y) {
         options = options || {}
 
         // this function makes sure that either the
-        // ace event is executed, or the yjs observer is executed
+        // codemirror event is executed, or the yjs observer is executed
         var token = true
         function mutualExcluse (f) {
           if (token) {

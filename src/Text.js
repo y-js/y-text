@@ -68,9 +68,7 @@ function extend (Y) {
               var delta = deltas[i]
               var start = codeMirrorInstance.indexFromPos(delta.from)
               // apply the delete operation first
-              if (delta.removed.length > 0 ||
-                (delta.removed.length === 1 && delta.removed[0].length === 0)
-              ) {
+              if (delta.removed.length > 0) {
                 var delLength = 0
                 for (var j = 0; j < delta.removed.length; j++) {
                   delLength += delta.removed[j].length

@@ -1,6 +1,6 @@
 /**
  * yjs - A framework for real-time p2p shared editing on any data
- * @version v12.1.6
+ * @version v12.1.7
  * @link http://y-js.org
  * @license MIT
  */
@@ -709,6 +709,7 @@ function merge_tuples (diffs, start, length) {
 'use strict'
 
 var diff = require('fast-diff')
+var monacoIdentifierTemplate = { major: 0, minor: 0 }
 
 function extend (Y) {
   Y.requestModules(['Array']).then(function () {
@@ -718,6 +719,7 @@ function extend (Y) {
         this.textfields = []
         this.aceInstances = []
         this.codeMirrorInstances = []
+        this.monacoInstances = []
       }
       toString () {
         return this._content.map(function (c) {
@@ -731,7 +733,107 @@ function extend (Y) {
         this.unbindTextareaAll()
         this.unbindAceAll()
         this.unbindCodeMirrorAll()
+        this.unbindMonacoAll()
       }
+      // Monaco implementation
+      unbindMonaco (monacoInstance) {
+        var i = this.monacoInstances.findIndex(function (binding) {
+          return binding.editor === monacoInstance
+        })
+        if (i >= 0) {
+          var binding = this.monacoInstances[i]
+          this.unobserve(binding.yCallback)
+          binding.disposeBinding()
+          this.monacoInstances.splice(i, 1)
+        }
+      }
+      unbindMonacoAll () {
+        for (let i = this.monacoInstances.length - 1; i >= 0; i--) {
+          this.unbindMonaco(this.monacoInstances[i].editor)
+        }
+      }
+      bindMonaco (monacoInstance, options) {
+        var self = this
+        options = options || {}
+
+        // this function makes sure that either the
+        // monaco event is executed, or the yjs observer is executed
+        var token = true
+        function mutualExcluse (f) {
+          if (token) {
+            token = false
+            try {
+              f()
+            } catch (e) {
+              token = true
+              throw new Error(e)
+            }
+            token = true
+          }
+        }
+        monacoInstance.setValue(this.toString())
+
+        function monacoCallback (event) {
+          mutualExcluse(function () {
+            // compute start.. (col+row -> index position)
+            // We shouldn't compute the offset on the old model..
+            //    var start = monacoInstance.model.getOffsetAt({column: event.range.startColumn, lineNumber: event.range.startLineNumber})
+            // So we compute the offset using the _content of this type
+            for (var i = 0, line = 1; line < event.range.startLineNumber; i++) {
+              if (self._content[i].val === event.eol) {
+                line++
+              }
+            }
+            var start = i + event.range.startColumn - 1
+
+            // apply the delete operation first
+            if (event.rangeLength > 0) {
+              self.delete(start, event.rangeLength)
+            }
+            // apply insert operation
+            self.insert(start, event.text)
+          })
+        }
+        var disposeBinding = monacoInstance.onDidChangeModelContent(monacoCallback).dispose
+
+        function yCallback (event) {
+          mutualExcluse(function () {
+            let start = monacoInstance.model.getPositionAt(event.index)
+            var end, text
+            if (event.type === 'insert') {
+              end = start
+              text = event.values.join('')
+            } else if (event.type === 'delete') {
+              end = monacoInstance.model.modifyPosition(start, event.length)
+              text = ''
+            }
+            var range = {
+              startLineNumber: start.lineNumber,
+              startColumn: start.column,
+              endLineNumber: end.lineNumber,
+              endColumn: end.column
+            }
+            var id = {
+              major: monacoIdentifierTemplate.major,
+              minor: monacoIdentifierTemplate.minor++
+            }
+            monacoInstance.executeEdits('Yjs', [{
+              id: id,
+              range: range,
+              text: text,
+              forceMoveMarkers: true
+            }])
+          })
+        }
+        this.observe(yCallback)
+        this.monacoInstances.push({
+          editor: monacoInstance,
+          yCallback: yCallback,
+          monacoCallback: monacoCallback,
+          disposeBinding: disposeBinding
+        })
+      }
+      // CodeMirror implementation..
       unbindCodeMirror (codeMirrorInstance) {
         var i = this.codeMirrorInstances.findIndex(function (binding) {
           return binding.editor === codeMirrorInstance
@@ -775,9 +877,7 @@ function extend (Y) {
               var delta = deltas[i]
               var start = codeMirrorInstance.indexFromPos(delta.from)
               // apply the delete operation first
-              if (delta.removed.length > 0 ||
-                (delta.removed.length === 1 && delta.removed[0].length === 0)
-              ) {
+              if (delta.removed.length > 0) {
                 var delLength = 0
                 for (var j = 0; j < delta.removed.length; j++) {
                   delLength += delta.removed[j].length
@@ -909,6 +1009,8 @@ function extend (Y) {
           this.bindAce.apply(this, arguments)
         } else if (e != null && e.posFromIndex != null && e.replaceRange != null) {
           this.bindCodeMirror.apply(this, arguments)
+        } else if (e != null && e.onDidChangeModelContent != null) {
+          this.bindMonaco.apply(this, arguments)
         } else {
           console.error('Cannot bind, unsupported editor!')
         }
@@ -1117,7 +1219,7 @@ function extend (Y) {
       struct: 'List',
       initType: function * YTextInitializer (os, model) {
         var _content = []
-        yield* Y.Struct.List.map.call(this, model, function (op) {
+        yield * Y.Struct.List.map.call(this, model, function (op) {
           if (op.hasOwnProperty('opContent')) {
             throw new Error('Text must not contain types!')
           } else {

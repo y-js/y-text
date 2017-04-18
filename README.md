@@ -2,7 +2,7 @@
 # Text Type for [Yjs](https://github.com/y-js/yjs)
 
 Use the Y.Text type to share text content. The shared content can be bound to
-[Ace](https://ace.c9.io/), [CodeMirror](https://codemirror.net/), or any HTML
+[Ace](https://ace.c9.io/), [CodeMirror](https://codemirror.net/), [Monaco]([Monaco](https://github.com/Microsoft/monaco-editor)), or any HTML
 input element (e.g. &lt;input&gt;, &lt;textarea&gt;, any element that has the [contenteditable](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/contenteditable) property)
 
 ```
@@ -49,6 +49,8 @@ require('y-text')(Y)
       `aceClass.require`). Must work similar to `ace.require`
 * .bindTextarea(editor)
   * Supports textareas, inputs, and any contenteditable element
+* .bindMonaco(editor)
+  * Bind shared content to a [Monaco](https://github.com/Microsoft/monaco-editor) editor
 * .bind(editor, options) - *deprecated*
   * Tries to detect the editor, and applies the arguments to `.bind[editor](..)`
   * `.bind*(editor)` does not preserve the existing value of the bound editor.
@@ -83,6 +85,11 @@ property will also hold when content is deleted or when a deletion is undone.
   * An operation conflicts with another operation if it intends to be inserted
     at the same position.
   * Overall worst case complexety: O(|conflicts|!)
+
+
+## Contribution
+We thank [@NathanaelA](https://github.com/nathanaela) who sponsored the bindings to the Monaco editor!
+
 
 ## License
 Yjs is licensed under the [MIT License](./LICENSE).

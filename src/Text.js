@@ -2,7 +2,7 @@
 'use strict'
 
 var diff = require('fast-diff')
-var monacoIdentifierTemplate = { major: 0, minor: 0}
+var monacoIdentifierTemplate = { major: 0, minor: 0 }
 
 function extend (Y) {
   Y.requestModules(['Array']).then(function () {
@@ -67,7 +67,7 @@ function extend (Y) {
         monacoInstance.setValue(this.toString())
 
         function monacoCallback (event) {
-          mutualExcluse(function () {         
+          mutualExcluse(function () {
             // compute start.. (col+row -> index position)
             // We shouldn't compute the offset on the old model..
             //    var start = monacoInstance.model.getOffsetAt({column: event.range.startColumn, lineNumber: event.range.startLineNumber})
@@ -100,7 +100,12 @@ function extend (Y) {
               end = monacoInstance.model.modifyPosition(start, event.length)
               text = ''
             }
-            var range = new monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column)
+            var range = {
+              startLineNumber: start.lineNumber,
+              startColumn: start.column,
+              endLineNumber: end.lineNumber,
+              endColumn: end.column
+            }
             var id = {
               major: monacoIdentifierTemplate.major,
               minor: monacoIdentifierTemplate.minor++
@@ -507,7 +512,7 @@ function extend (Y) {
       struct: 'List',
       initType: function * YTextInitializer (os, model) {
         var _content = []
-        yield* Y.Struct.List.map.call(this, model, function (op) {
+        yield * Y.Struct.List.map.call(this, model, function (op) {
           if (op.hasOwnProperty('opContent')) {
             throw new Error('Text must not contain types!')
           } else {

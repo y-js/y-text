@@ -2,7 +2,7 @@
 # Text Type for [Yjs](https://github.com/y-js/yjs)
 
 Use the Y.Text type to share text content. The shared content can be bound to
-[Ace](https://ace.c9.io/), [CodeMirror](https://codemirror.net/), [Monaco]([Monaco](https://github.com/Microsoft/monaco-editor)), or any HTML
+[Ace](https://ace.c9.io/), [CodeMirror](https://codemirror.net/), [Monaco](https://github.com/Microsoft/monaco-editor), or any HTML
 input element (e.g. &lt;input&gt;, &lt;textarea&gt;, any element that has the [contenteditable](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/contenteditable) property)
 
 ```
@@ -39,6 +39,12 @@ require('y-text')(Y)
   * Insert a string at a position
 * .delete(position, length)
   * Delete a substring. The *length* parameter is optional and defaults to 1
+* .get(i)
+  * Retrieve the i-th character
+* .toString()
+  * Return the content as a String
+* .bindTextarea(htmlElement)
+  * Supports textareas, inputs, and any contenteditable element
 * .bindCodeMirror(codemirror)
   * Bind shared content to a [CodeMirror](https://codemirror.net/) instance
 * .bindAce(aceEditor)
@@ -47,17 +53,29 @@ require('y-text')(Y)
     * **aceClass**: In case `ace` is not defined on the global object
     * **aceRequire**: An alternative method to require Ace modules (default is
       `aceClass.require`). Must work similar to `ace.require`
-* .bindTextarea(editor)
-  * Supports textareas, inputs, and any contenteditable element
 * .bindMonaco(editor)
   * Bind shared content to a [Monaco](https://github.com/Microsoft/monaco-editor) editor
 * .bind(editor, options) - *deprecated*
   * Tries to detect the editor, and applies the arguments to `.bind[editor](..)`
   * `.bind*(editor)` does not preserve the existing value of the bound editor.
-* .toString()
-  * Convert the internal structure to a javascript string
-* .get(i)
-  * Retrieve the i-th character
+* .unbindTextarea(htmlElement)
+  * Remove bindings to a html element
+* .unbindCodeMirror(codemirror)
+  * Remove bindings to a CodeMirror instance
+* .unbindAce(aceEditor)
+  * Remove bindings to a Ace instance
+* .unbindMonaco(editor)
+  * Remove bindings to a Monaco instance
+* .unbindTextareaAll()
+  * Remove all bindings to html elements
+* .unbindCodeMirrorAll()
+  * Remove all bindings to CodeMirror instances
+* .unbindAceAll()
+  * Remove all bindings to Ace instances
+* .unbindMonacoAll()
+  * Remove all Monaco editor bindings
+* .unbindAll()
+  * Remove all bindings
 * .observe(f)
   * The observer is called whenever something on this text changed. (throws
     insert, and delete events)

@@ -1,6 +1,6 @@
 /**
  * yjs - A framework for real-time p2p shared editing on any data
- * @version v12.1.7
+ * @version v12.3.1
  * @link http://y-js.org
  * @license MIT
  */

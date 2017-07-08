@@ -727,7 +727,46 @@ function extend (Y) {
         }).join('')
       }
       insert (pos, content) {
-        super.insert(pos, content.split(''))
+        var arr = content.split('')
+        for (var i = 0; i < arr.length; i++) {
+          if (/[\uD800-\uDFFF]/.test(arr[i])) {
+            // is surrogate pair
+            arr[i] = arr[i] + arr[i + 1]
+            arr[i + 1] = ''
+            i++
+          }
+        }
+        super.insert(pos, arr)
+      }
+      delete (pos, length) {
+        if (length == null) { length = 1 }
+        if (typeof length !== 'number') {
+          throw new Error('length must be a number!')
+        }
+        if (typeof pos !== 'number') {
+          throw new Error('pos must be a number!')
+        }
+        if (pos + length > this._content.length || pos < 0 || length < 0) {
+          throw new Error('The deletion range exceeds the range of the array!')
+        }
+        if (length === 0) {
+          return
+        }
+        // This is for the case that part of a surrogate pair is deleted
+        // we store surrogate pairs like this: [.., '🐇', '', ..] (string, code)
+        if (this._content.length > pos + length && this._content[pos + length].val === '' && this._content[pos + length - 1].val.length === 2) {
+          // case one. first part of the surrogate pair is deleted
+          let token = this._content[pos + length - 1].val[0]
+          super.delete(pos, length + 1)
+          super.insert(pos, [token])
+        } else if (pos > 0 && this._content[pos].val === '' && this._content[pos - 1].val.length === 2) {
+          // case two. second part of the surrogate pair is deleted
+          let token = this._content[pos - 1].val[1]
+          super.delete(pos - 1, length + 1)
+          super.insert(pos - 1, [token])
+        } else {
+          super.delete(pos, length)
+        }
       }
       unbindAll () {
         this.unbindTextareaAll()

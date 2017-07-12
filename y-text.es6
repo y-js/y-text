@@ -819,7 +819,7 @@ function extend (Y) {
             //    var start = monacoInstance.model.getOffsetAt({column: event.range.startColumn, lineNumber: event.range.startLineNumber})
             // So we compute the offset using the _content of this type
             for (var i = 0, line = 1; line < event.range.startLineNumber; i++) {
-              if (self._content[i].val === event.eol) {
+              if (self._content[i].val === '\n') {
                 line++
               }
             }

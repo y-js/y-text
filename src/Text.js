@@ -7,12 +7,15 @@ var monacoIdentifierTemplate = { major: 0, minor: 0 }
 function extend (Y) {
   Y.requestModules(['Array']).then(function () {
     class YText extends Y.Array.typeDefinition['class'] {
-      constructor (os, _model, _content) {
+      constructor (os, _model, _content, args) {
         super(os, _model, _content)
         this.textfields = []
         this.aceInstances = []
         this.codeMirrorInstances = []
         this.monacoInstances = []
+        if (args != null && _model[0] !== '_' && typeof args === 'string') {
+          this.insert(0, args)
+        }
       }
       toString () {
         return this._content.map(function (c) {
@@ -549,6 +552,13 @@ function extend (Y) {
       name: 'Text',
       class: YText,
       struct: 'List',
+      parseArguments: function (arg) {
+        if (typeof arg === 'string') {
+          return [this, arg]
+        } else {
+          return [this, null]
+        }
+      },
       initType: function * YTextInitializer (os, model) {
         var _content = []
         yield * Y.Struct.List.map.call(this, model, function (op) {
@@ -565,8 +575,8 @@ function extend (Y) {
         })
         return new YText(os, model.id, _content)
       },
-      createType: function YTextCreator (os, model) {
-        return new YText(os, model.id, [])
+      createType: function YTextCreator (os, model, args) {
+        return new YText(os, model.id, [], args)
       }
     }))
   })

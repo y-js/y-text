@@ -559,9 +559,9 @@ function extend (Y) {
           return [this, null]
         }
       },
-      initType: function * YTextInitializer (os, model) {
+      initType: function YTextInitializer (os, model) {
         var _content = []
-        yield * Y.Struct.List.map.call(this, model, function (op) {
+        Y.Struct.List.map.call(this, model, function (op) {
           if (op.hasOwnProperty('opContent')) {
             throw new Error('Text must not contain types!')
           } else {

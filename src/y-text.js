@@ -1,10 +1,9 @@
 /* global Y, Element */
-'use strict'
 
 var diff = require('fast-diff')
 var monacoIdentifierTemplate = { major: 0, minor: 0 }
 
-function extend (Y) {
+export default function extendYText (Y) {
   Y.requestModules(['Array']).then(function () {
     class YText extends Y.Array.typeDefinition['class'] {
       constructor (os, _model, _content, args) {
@@ -582,7 +581,6 @@ function extend (Y) {
   })
 }
 
-module.exports = extend
 if (typeof Y !== 'undefined') {
-  extend(Y)
+  extendYText(Y)
 }

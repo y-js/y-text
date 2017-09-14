@@ -1,6 +1,7 @@
 /* global Y, Element */
 
-var diff = require('fast-diff')
+import diff from 'fast-diff'
+
 var monacoIdentifierTemplate = { major: 0, minor: 0 }
 
 export default function extendYText (Y) {

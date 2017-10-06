@@ -22,6 +22,9 @@ export default function extendYText (Y) {
           return c.val
         }).join('')
       }
+      toJSON () {
+        return this.toString()
+      }
       insert (pos, content) {
         var arr = content.split('')
         for (var i = 0; i < arr.length; i++) {
